@@ -8,6 +8,9 @@
 # ./download-refseq-genomes.pl 203682
 # will download all Planctomycetes genomes.
 #
+# The file type can be set using command line option -t using one of the values
+# "fna", "faa", or "gbff" (default).
+#
 # Currently, only genomes with status "Complete Genome" are downloaded.
 #
 # Copyright 2018 Peter Menzel <pmenzel@gmail.com>
@@ -15,9 +18,26 @@
 
 use warnings;
 use strict;
+use Getopt::Std;
+
+my %options=();
+getopts("t:", \%options);
 
 my %nodes;
-my $arg_taxid = 0;
+my $arg_taxid = 1;
+my %allowed_filetypes = ( "gbff" => "_genomic.gbff.gz", "fna" => "_genomic.fna.gz", "faa" => "_protein.faa.gz" );
+my $filetype = "gbff";
+
+if(exists($options{t})) {
+	if(defined($options{t}) && $options{t} =~ /gbff|fna|faa/) {
+		$filetype = $options{t};
+	}
+	else {
+		die("Option -t must be set to one of {",join(", ",keys(%allowed_filetypes)),"}.\n");
+	}
+}
+
+my $url_ext = $allowed_filetypes{$filetype};
 
 if(!defined $ARGV[0]) { die "Usage:  download_refseq_genomes.pl <taxon id>\n"; }
 $arg_taxid = $ARGV[0];
@@ -113,7 +133,7 @@ print "Downloading ", scalar(@download_list), " genomes.\n\n";
 foreach my $l (@download_list) {
 	my @F = split(/\//,$l);
 	print "Downloading ", $F[-1],"\n";
-	my $path = $l.'/'.$F[-1].'_genomic.gbff.gz';
+	my $path = $l.'/'.$F[-1].$url_ext;
 	system('wget -N -nv'.$wgetProgress.$path);
 }
 
