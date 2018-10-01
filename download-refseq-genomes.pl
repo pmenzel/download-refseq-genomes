@@ -76,7 +76,7 @@ sub get_lineage {
 }
 
 #test if option --show-progress is available for wget, then use it when downloading
-my $wgetProgress = "";
+my $wgetProgress = " ";
 my @wgethelp = `wget --help`;
 if(grep(/--show-progress/, @wgethelp)) { $wgetProgress=' --show-progress '; }
 
