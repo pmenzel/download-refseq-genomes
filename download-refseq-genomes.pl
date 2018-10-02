@@ -107,7 +107,7 @@ if(!defined($nodes{$arg_taxid})) { die "Taxon ID $arg_taxid is not found in taxo
 my @l = get_lineage($arg_taxid);
 my $branch = $l[1];
 if($branch==131567) {$branch=$l[2];}
-if(!defined($assembly_summaries{$branch})) { die "Cannot determine major branch from taxon id $branch in lineage @l\n"; }
+if(!defined($assembly_summaries{$branch})) { die "Taxon $arg_taxid does not seem to belong to Bacteria, Archaea, or Viruses.  (lineage is @l)\n"; }
 
 print "Downloading assembly summary\n";
 system('wget -N -nv'.$wgetProgress.$assembly_summaries{$branch});
