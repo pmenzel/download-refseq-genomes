@@ -9,7 +9,7 @@
 # will download all Planctomycetes genomes.
 #
 # The file type can be set using command line option -t using one of the values
-# "fna", "faa", or "gbff" (default).
+# "fna", "faa", "gff", or "gbff" (default).
 #
 # Currently, only genomes with status "Complete Genome" are downloaded.
 #
@@ -25,11 +25,11 @@ getopts("t:", \%options);
 
 my %nodes;
 my $arg_taxid = 1;
-my %allowed_filetypes = ( "gbff" => "_genomic.gbff.gz", "fna" => "_genomic.fna.gz", "faa" => "_protein.faa.gz" );
+my %allowed_filetypes = ( "gbff" => "_genomic.gbff.gz", "fna" => "_genomic.fna.gz", "faa" => "_protein.faa.gz", "gff" => "_genomic.gff.gz" );
 my $filetype = "gbff";
 
 if(exists($options{t})) {
-	if(defined($options{t}) && $options{t} =~ /gbff|fna|faa/) {
+	if(defined($options{t}) && $options{t} =~ /gbff|fna|faa|gff/) {
 		$filetype = $options{t};
 	}
 	else {
