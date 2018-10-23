@@ -1,7 +1,7 @@
 # Download RefSeq genomes by taxon id
 
-This script downloads all bacterial, Archaeal, or viral genomes (as gbff.gz
-files) from the NCBI FTP server that belong to the taxonomy sub-tree denoted
+This script downloads all bacterial, Archaeal, or viral genomes
+from the NCBI FTP server that belong to the taxonomy sub-tree denoted
 by the taxon id given as argument.
 
 For example:
@@ -16,7 +16,11 @@ The file type can be set using command line option -t using one of the values
 ./download-refseq-genomes.pl -t fna 203682
 ```
 
-Currently, only genomes with status "Complete Genome" are downloaded.
+By default, only genomes with assembly_level "Complete Genome" are downloaded.
+Setting option -a will download all genomes regardless of assembly level:
+```
+./download-refseq-genomes.pl -a -t fna 203682
+```
 
 The script will first download and parse the NCBI taxonomy. Next
 it determines the major branch (i.e. Bacteria, Archaea or Viruses)
