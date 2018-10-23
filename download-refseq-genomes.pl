@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
-# This script downloads all bacterial, Archaeal, or viral genomes (as gbff.gz
-# files) from the NCBI FTP server that belong to the taxonomy sub-tree denoted
+# This script downloads all bacterial, Archaeal, or viral genomes
+# from the NCBI FTP server that belong to the taxonomy sub-tree denoted
 # by the taxon id given as argument.
 #
 # For example:
@@ -11,7 +11,8 @@
 # The file type can be set using command line option -t using one of the values
 # "fna", "faa", "gff", or "gbff" (default).
 #
-# Currently, only genomes with status "Complete Genome" are downloaded.
+# By default, only genomes with assembly_level "Complete Genome" are downloaded.
+# Setting option -a will download all genomes regardless of assembly level.
 #
 # Copyright 2018 Peter Menzel <pmenzel@gmail.com>
 
@@ -21,12 +22,18 @@ use strict;
 use Getopt::Std;
 
 my %options=();
-getopts("t:", \%options);
+getopts("t:a", \%options);
 
 my %nodes;
 my $arg_taxid = 1;
 my %allowed_filetypes = ( "gbff" => "_genomic.gbff.gz", "fna" => "_genomic.fna.gz", "faa" => "_protein.faa.gz", "gff" => "_genomic.gff.gz" );
 my $filetype = "gbff";
+
+# switch for selecting only assemblies with "Complete Genome" (default) or all types
+my $assembly_level_all = 0;
+if(exists($options{a})) {
+	$assembly_level_all = 1;
+}
 
 if(exists($options{t})) {
 	if(defined($options{t}) && $options{t} =~ /gbff|fna|faa|gff/) {
@@ -114,13 +121,13 @@ system('wget -N -nv'.$wgetProgress.$assembly_summaries{$branch});
 if(! -r "assembly_summary.txt") { print "Missing file assembly_summary.txt"; exit 1; }
 
 open(ASSS,"assembly_summary.txt") or die "Cannot open assembly_summary.txt\n";
-my $firstline=<ASSS>;
 my @download_list;
 while(<ASSS>) {
+	next if /^#/;
 	chomp;
 	my @F = split(/\t/);
 	next unless $#F > 10;
-	next unless $F[11] eq "Complete Genome";
+	next unless $assembly_level_all || $F[11] eq "Complete Genome";
 	my $taxid = $F[5];
 	if(!defined($nodes{$taxid})) { print "Warning: Taxon ID $taxid not found in taxonomy.\n"; next; }
 	if(is_ancestor($taxid,$arg_taxid)) {
