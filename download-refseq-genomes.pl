@@ -98,8 +98,7 @@ print "Reading nodes.dmp\n";
 
 open(NODES,"nodes.dmp") or die "Cannot open nodes.dmp\n";
 while(<NODES>) {
-	chomp;
-	my @F = split(/\|/);
+	my @F = split(/\|/,$_);
 	if($#F > 1) {
 		my $id = -+- $F[0];
 		my $parentid = -+- $F[1];
@@ -124,8 +123,7 @@ open(ASSS,"assembly_summary.txt") or die "Cannot open assembly_summary.txt\n";
 my @download_list;
 while(<ASSS>) {
 	next if /^#/;
-	chomp;
-	my @F = split(/\t/);
+	my @F = split(/\t/,$_);
 	next unless $#F > 10;
 	next unless $assembly_level_all || $F[11] eq "Complete Genome";
 	my $taxid = $F[5];
