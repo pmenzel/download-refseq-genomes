@@ -20,6 +20,7 @@
 use warnings;
 use strict;
 use Getopt::Std;
+use Term::ANSIColor;
 
 my %options=();
 getopts("t:a", \%options);
@@ -134,7 +135,7 @@ while(<ASSS>) {
 }
 close(ASSS);
 
-print "Downloading ", scalar(@download_list), " genomes.\n\n";
+print colored("\nDownloading ".scalar(@download_list). " genomes.\n\n","green");
 foreach my $l (@download_list) {
 	my @F = split(/\//,$l);
 	print "Downloading ", $F[-1],"\n";
