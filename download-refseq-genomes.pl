@@ -49,9 +49,9 @@ my $url_ext = $allowed_filetypes{$filetype};
 
 if(!defined $ARGV[0]) { die "Usage:  download_refseq_genomes.pl <taxon id>\n"; }
 $arg_taxid = $ARGV[0];
-if($arg_taxid==131567 or $arg_taxid==1) { die "Please choose a taxid within Archaea, bacteria, or viruses.\n"; }
 
 my %assembly_summaries = (
+ 4751 => "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/fungi/assembly_summary.txt",
  2 => "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt",
  2157 => "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/archaea/assembly_summary.txt",
  10239 => "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/viral/assembly_summary.txt");
@@ -113,7 +113,9 @@ if(!defined($nodes{$arg_taxid})) { die "Taxon ID $arg_taxid is not found in taxo
 
 my @l = get_lineage($arg_taxid);
 my $branch = $l[1];
-if($branch==131567) {$branch=$l[2];}
+if($branch==131567) {$branch=$l[2];} #cellular organisms, then switch down one level to decide between bacteria and Archaea, so branch should be 2 or 2157
+if($branch==2759) {$branch=4751;} # for fungi, branch would be 2759, so set it to fungi ID
+
 if(!defined($assembly_summaries{$branch})) { die "Taxon $arg_taxid does not seem to belong to Bacteria, Archaea, or Viruses.  (lineage is @l)\n"; }
 
 print "Downloading assembly summary\n";
