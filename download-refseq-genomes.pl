@@ -50,11 +50,7 @@ my $url_ext = $allowed_filetypes{$filetype};
 if(!defined $ARGV[0]) { die "Usage:  download_refseq_genomes.pl <taxon id>\n"; }
 $arg_taxid = $ARGV[0];
 
-my %assembly_summaries = (
- 4751 => "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/fungi/assembly_summary.txt",
- 2 => "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt",
- 2157 => "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/archaea/assembly_summary.txt",
- 10239 => "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/viral/assembly_summary.txt");
+my $assembly_summary = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt";
 
 sub is_ancestor {
 	my $id = $_[0];
@@ -88,14 +84,14 @@ my $wgetProgress = " ";
 my @wgethelp = `wget --help`;
 if(grep(/--show-progress/, @wgethelp)) { $wgetProgress=' --show-progress '; }
 
-print "Downloading file taxdump.tar.gz\n";
+print STDERR "Downloading file taxdump.tar.gz\n";
 system('wget -N -nv '.$wgetProgress.' ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz');
 
-if(! -r "taxdump.tar.gz") { print "Missing file taxdump.tar.gz"; exit 1; }
+if(! -r "taxdump.tar.gz") { print STDERR "Missing file taxdump.tar.gz"; exit 1; }
 
-print "Extracting nodes.dmp from taxdump.tar.gz\n";
+print STDERR "Extracting nodes.dmp from taxdump.tar.gz\n";
 system('tar xf taxdump.tar.gz nodes.dmp');
-print "Reading nodes.dmp\n";
+print STDERR "Reading nodes.dmp\n";
 
 open(NODES,"nodes.dmp") or die "Cannot open nodes.dmp\n";
 while(<NODES>) {
@@ -111,37 +107,36 @@ close(NODES);
 #check if argument taxid is in tree
 if(!defined($nodes{$arg_taxid})) { die "Taxon ID $arg_taxid is not found in taxonomy!\n"; }
 
-my @l = get_lineage($arg_taxid);
-my $branch = $l[1];
-if($branch==131567) {$branch=$l[2];} #cellular organisms, then switch down one level to decide between bacteria and Archaea, so branch should be 2 or 2157
-if($branch==2759) {$branch=4751;} # for fungi, branch would be 2759, so set it to fungi ID
+print STDERR "Downloading assembly summary\n";
+system('wget -N -nv'.$wgetProgress.$assembly_summary);
+if($? != 0) { die "Failure when downloading!\n"; }
 
-if(!defined($assembly_summaries{$branch})) { die "Taxon $arg_taxid does not seem to belong to Bacteria, Archaea, or Viruses.  (lineage is @l)\n"; }
-
-print "Downloading assembly summary\n";
-system('wget -N -nv'.$wgetProgress.$assembly_summaries{$branch});
-if(! -r "assembly_summary.txt") { print "Missing file assembly_summary.txt"; exit 1; }
-
-open(ASSS,"assembly_summary.txt") or die "Cannot open assembly_summary.txt\n";
+print STDERR "Parsing assembly summary\n";
+open(ASSS,"assembly_summary_refseq.txt") or die "Cannot open assembly_summary_refseq.txt\n";
 my @download_list;
 while(<ASSS>) {
 	next if /^#/;
 	my @F = split(/\t/,$_);
-	next unless $#F > 10;
+	next unless $#F > 18;
 	next unless $assembly_level_all || $F[11] eq "Complete Genome";
 	my $taxid = $F[5];
-	if(!defined($nodes{$taxid})) { print "Warning: Taxon ID $taxid not found in taxonomy.\n"; next; }
+	if(!defined($nodes{$taxid})) { print STDERR "Warning: Taxon ID $taxid not found in taxonomy.\n"; next; }
 	if(is_ancestor($taxid,$arg_taxid)) {
-	  push(@download_list,$F[19]);
+	  if($F[19] ne "na") {
+		  push(@download_list,$F[19]);
+		}
+		else { print STDERR "Warning: Now download URL for assembly $F[0]\n"; }
 	}
 }
 close(ASSS);
 
-print colored("\nDownloading ".scalar(@download_list). " genomes.\n\n","green");
+print colored("\nDownloading ".scalar(@download_list). " genomes for taxon ID $arg_taxid\n\n","green");
 foreach my $l (@download_list) {
 	my @F = split(/\//,$l);
-	print "Downloading ", $F[-1],"\n";
+	print STDERR "Downloading ", $F[-1],"\n";
 	my $path = $l.'/'.$F[-1].$url_ext;
-	system('wget -N -nv'.$wgetProgress.$path);
+	my $cmd = 'wget -P genomes/ -nc -nv '.$path;
+	`$cmd`;
+	if($? != 0) { print STDERR "Error downloading $path\n";}
 }
 
