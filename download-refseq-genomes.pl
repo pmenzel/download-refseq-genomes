@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# This script downloads all bacterial, Archaeal, or viral genomes
+# This script downloads all RefSeq genome assemblies
 # from the NCBI FTP server that belong to the taxonomy sub-tree denoted
 # by the taxon id given as argument.
 #
@@ -14,7 +14,7 @@
 # By default, only genomes with assembly_level "Complete Genome" are downloaded.
 # Setting option -a will download all genomes regardless of assembly level.
 #
-# Copyright 2018 Peter Menzel <pmenzel@gmail.com>
+# Copyright 2018,2019 Peter Menzel <pmenzel@gmail.com>
 
 
 use warnings;
@@ -33,16 +33,24 @@ my $filetype = "gbff";
 # switch for selecting only assemblies with "Complete Genome" (default) or all types
 my $assembly_level_all = 0;
 if(exists($options{a})) {
+	print STDERR "Genome completeness: all\n";
 	$assembly_level_all = 1;
+}
+else {
+	print STDERR "Genome completeness: Complete Genome\n";
 }
 
 if(exists($options{t})) {
 	if(defined($options{t}) && $options{t} =~ /gbff|fna|faa|gff/) {
 		$filetype = $options{t};
+		print STDERR "File type: $filetype\n";
 	}
 	else {
 		die("Option -t must be set to one of {",join(", ",keys(%allowed_filetypes)),"}.\n");
 	}
+}
+else {
+	print STDERR "File type: gbff\n";
 }
 
 my $url_ext = $allowed_filetypes{$filetype};
@@ -108,8 +116,8 @@ close(NODES);
 if(!defined($nodes{$arg_taxid})) { die "Taxon ID $arg_taxid is not found in taxonomy!\n"; }
 
 print STDERR "Downloading assembly summary\n";
-system('wget -N -nv'.$wgetProgress.$assembly_summary);
-if($? != 0) { die "Failure when downloading!\n"; }
+system('wget -N -c -nv'.$wgetProgress.$assembly_summary);
+if($? != 0) { die "Error: Failed  to download $assembly_summary.\n"; }
 
 print STDERR "Parsing assembly summary\n";
 open(ASSS,"assembly_summary_refseq.txt") or die "Cannot open assembly_summary_refseq.txt\n";
@@ -117,7 +125,7 @@ my @download_list;
 while(<ASSS>) {
 	next if /^#/;
 	my @F = split(/\t/,$_);
-	next unless $#F > 18;
+	if($#F < 19) { print STDERR "Warning: Line $. has less than 20 fields, skipping...\n"; next; }
 	next unless $assembly_level_all || $F[11] eq "Complete Genome";
 	my $taxid = $F[5];
 	if(!defined($nodes{$taxid})) { print STDERR "Warning: Taxon ID $taxid not found in taxonomy.\n"; next; }
@@ -125,7 +133,7 @@ while(<ASSS>) {
 	  if($F[19] ne "na") {
 		  push(@download_list,$F[19]);
 		}
-		else { print STDERR "Warning: Now download URL for assembly $F[0]\n"; }
+		else { print STDERR "Warning: No download URL for assembly $F[0]\n"; }
 	}
 }
 close(ASSS);
