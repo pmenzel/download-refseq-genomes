@@ -97,11 +97,11 @@ system('wget -N -nv '.$wgetProgress.' ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/ta
 
 if(! -r "taxdump.tar.gz") { print STDERR "Missing file taxdump.tar.gz"; exit 1; }
 
-print STDERR "Extracting nodes.dmp from taxdump.tar.gz\n";
-system('tar xf taxdump.tar.gz nodes.dmp');
-print STDERR "Reading nodes.dmp\n";
+#print STDERR "Extracting nodes.dmp from taxdump.tar.gz\n";
+#system('tar xf taxdump.tar.gz nodes.dmp');
+print STDERR "Reading nodes.dmp from taxdump.tar.gz\n";
 
-open(NODES,"nodes.dmp") or die "Cannot open nodes.dmp\n";
+open(NODES,"gunzip -c taxdump.tar.gz | tar -O -xf - nodes.dmp |") or die "Cannot open nodes.dmp\n";
 while(<NODES>) {
 	my @F = split(/\|/,$_);
 	if($#F > 1) {
