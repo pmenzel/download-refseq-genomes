@@ -11,10 +11,14 @@
 # The file type can be set using command line option -t using one of the values
 # "fna", "faa", "gff", or "gbff" (default).
 #
+# The lines from assembly_summary_refseq.txt of downloaded genomes can be written to a
+# file using option -s <filename.tsv>. If the file already exists,
+# then new lines will be appended.
+#
 # By default, only genomes with assembly_level "Complete Genome" are downloaded.
 # Setting option -a will download all genomes regardless of assembly level.
 #
-# Copyright 2018,2019 Peter Menzel <pmenzel@gmail.com>
+# Copyright 2018-2023 Peter Menzel <pmenzel@gmail.com>
 
 
 use warnings;
@@ -23,7 +27,7 @@ use Getopt::Std;
 use Term::ANSIColor;
 
 my %options=();
-getopts("t:a", \%options);
+getopts("t:s:a", \%options);
 
 my %nodes;
 my $arg_taxid = 1;
@@ -122,6 +126,7 @@ if($? != 0) { die "Error: Failed  to download $assembly_summary.\n"; }
 print STDERR "Parsing assembly summary\n";
 open(ASSS,"assembly_summary_refseq.txt") or die "Cannot open assembly_summary_refseq.txt\n";
 my @download_list;
+my @used_assembly_summary_lines;
 while(<ASSS>) {
 	next if /^#/;
 	my @F = split(/\t/,$_);
@@ -129,9 +134,10 @@ while(<ASSS>) {
 	next unless $assembly_level_all || $F[11] eq "Complete Genome";
 	my $taxid = $F[5];
 	if(!defined($nodes{$taxid})) { print STDERR "Warning: Taxon ID $taxid not found in taxonomy.\n"; next; }
-	if(is_ancestor($taxid,$arg_taxid)) {
+	if(is_ancestor($taxid, $arg_taxid)) {
 	  if($F[19] ne "na") {
-		  push(@download_list,$F[19]);
+		  push(@download_list, $F[19]);
+		  push(@used_assembly_summary_lines, $_);
 		}
 		else { print STDERR "Warning: No download URL for assembly $F[0]\n"; }
 	}
@@ -146,5 +152,12 @@ foreach my $l (@download_list) {
 	my $cmd = 'wget -P genomes/ -nc -nv '.$path;
 	`$cmd`;
 	if($? != 0) { print STDERR "Error downloading $path\n";}
+}
+
+if(exists($options{s})) {
+	open(my $fout, ">>", $options{s}) or die "Cannot open file " . $options{s} . " for writing!";
+	foreach my $l (@used_assembly_summary_lines) {
+		print $fout $l;
+	}
 }
 
