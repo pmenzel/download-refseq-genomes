@@ -97,7 +97,7 @@ my @wgethelp = `wget --help`;
 if(grep(/--show-progress/, @wgethelp)) { $wgetProgress=' --show-progress '; }
 
 print STDERR "Downloading file taxdump.tar.gz\n";
-system('wget -N -nv '.$wgetProgress.' http://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz');
+system('wget -N '.$wgetProgress.' http://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz');
 
 if(! -r "taxdump.tar.gz") { print STDERR "Missing file taxdump.tar.gz"; exit 1; }
 
@@ -120,7 +120,7 @@ close(NODES);
 if(!defined($nodes{$arg_taxid})) { die "Taxon ID $arg_taxid is not found in taxonomy!\n"; }
 
 print STDERR "Downloading assembly summary\n";
-system('wget -N -c -nv'.$wgetProgress.$assembly_summary);
+system('wget -N '.$wgetProgress.$assembly_summary);
 if($? != 0) { die "Error: Failed  to download $assembly_summary.\n"; }
 
 print STDERR "Parsing assembly summary\n";
