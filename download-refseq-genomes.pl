@@ -27,7 +27,7 @@ use Getopt::Std;
 use Term::ANSIColor;
 
 my %options=();
-getopts("t:s:a", \%options);
+getopts("t:s:ar", \%options);
 
 my %nodes;
 my $arg_taxid = 1;
@@ -42,6 +42,16 @@ if(exists($options{a})) {
 }
 else {
 	print STDERR "Genome completeness: Complete Genome\n";
+}
+
+# switch for selecting only assemblies with refseq_category == "reference genome" or "representative genome"
+my $refseq_category_repr = 0;
+if(exists($options{r})) {
+	print STDERR "RefSeq Category: representative genome or reference genome\n";
+	$refseq_category_repr = 1;
+}
+else {
+	print STDERR "RefSeq Category: any\n";
 }
 
 if(exists($options{t})) {
@@ -132,6 +142,7 @@ while(<ASSS>) {
 	my @F = split(/\t/,$_);
 	if($#F < 19) { print STDERR "Warning: Line $. has less than 20 fields, skipping...\n"; next; }
 	next unless $assembly_level_all || $F[11] eq "Complete Genome";
+	next unless $assembly_level_all || $F[4] =~ /reference genome|representative genome/;
 	my $taxid = $F[5];
 	if(!defined($nodes{$taxid})) { print STDERR "Warning: Taxon ID $taxid not found in taxonomy.\n"; next; }
 	if(is_ancestor($taxid, $arg_taxid)) {
