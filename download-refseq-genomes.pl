@@ -18,6 +18,8 @@
 # By default, only genomes with assembly_level "Complete Genome" are downloaded.
 # Setting option -a will download all genomes regardless of assembly level.
 #
+# Additionally, genomes can be filtered by the RefSeq category "representative genome" using option -r.
+#
 # Copyright 2018-2023 Peter Menzel <pmenzel@gmail.com>
 
 
@@ -45,10 +47,10 @@ else {
 }
 
 # switch for selecting only assemblies with refseq_category == "reference genome" or "representative genome"
-my $refseq_category_repr = 0;
+my $refseq_category_any = 1;
 if(exists($options{r})) {
 	print STDERR "RefSeq Category: representative genome or reference genome\n";
-	$refseq_category_repr = 1;
+	$refseq_category_any = 0;
 }
 else {
 	print STDERR "RefSeq Category: any\n";
@@ -72,7 +74,7 @@ my $url_ext = $allowed_filetypes{$filetype};
 if(!defined $ARGV[0]) { die "Usage:  download_refseq_genomes.pl <taxon id>\n"; }
 $arg_taxid = $ARGV[0];
 
-my $assembly_summary = "http://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt";
+my $assembly_summary = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt";
 
 sub is_ancestor {
 	my $id = $_[0];
@@ -107,7 +109,7 @@ my @wgethelp = `wget --help`;
 if(grep(/--show-progress/, @wgethelp)) { $wgetProgress=' --show-progress '; }
 
 print STDERR "Downloading file taxdump.tar.gz\n";
-system('wget -N '.$wgetProgress.' http://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz');
+system('wget -N '.$wgetProgress.' https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz');
 
 if(! -r "taxdump.tar.gz") { print STDERR "Missing file taxdump.tar.gz"; exit 1; }
 
@@ -142,7 +144,7 @@ while(<ASSS>) {
 	my @F = split(/\t/,$_);
 	if($#F < 19) { print STDERR "Warning: Line $. has less than 20 fields, skipping...\n"; next; }
 	next unless $assembly_level_all || $F[11] eq "Complete Genome";
-	next unless $assembly_level_all || $F[4] =~ /reference genome|representative genome/;
+	next unless $refseq_category_any || $F[4] eq "representative genome" || $F[4] eq "reference genome";
 	my $taxid = $F[5];
 	if(!defined($nodes{$taxid})) { print STDERR "Warning: Taxon ID $taxid not found in taxonomy.\n"; next; }
 	if(is_ancestor($taxid, $arg_taxid)) {

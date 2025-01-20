@@ -22,11 +22,9 @@ Setting option -a will download all genomes regardless of assembly level:
 ./download-refseq-genomes.pl -a -t fna 203682
 ```
 
-The script will first download and parse the NCBI taxonomy. Next
-it determines the major branch (i.e. Bacteria, Archaea or Viruses)
-and download the list of genome assemblies for that branch.
-Then this list is filtered by those genomes that are within the selected
-taxonomic sub-tree and the genomes are downloaded with `wget`.
+Additionally, genomes can be filtered by the RefSeq category "representative genome" or "reference genome" using option `-r`.
+
+Files are downloaded with `wget`.
 
 Copyright 2018 Peter Menzel <pmenzel@gmail.com>
 
